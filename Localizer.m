@@ -103,11 +103,16 @@ static Localizer *_globalInstance;
     return [[Localizer instance] stringWithKey:key];
 }
 
-- (UIImage *) imageWithName:(NSString *)name {
-    return [self imageWithName:name imageNumber:-1];
+- (UIImage *) imageNamed:(NSString *)name {
+    return [self ImageNamed:name imageNumber:-1];
 }
 
-- (UIImage *) imageWithName:(NSString *)name imageNumber:(NSUInteger)imageNumber {
+
++ (UIImage *) imageNamed: (NSString *)name {
+    return [[Localizer instance] imageNamed:name];
+}
+
+- (UIImage *) ImageNamed:(NSString *)name imageNumber:(NSUInteger)imageNumber {
     // Save path extension
     NSString *extension = [name pathExtension];
     // Remove path extension
@@ -158,20 +163,16 @@ static Localizer *_globalInstance;
 }
 
 // Returns a localized image array suitable for passing to an animate function
-- (NSArray *) imageAnimationArrayWithName:(NSString *)name numberOfImages:(NSUInteger)numberOfImages {
+- (NSArray *) imageAnimationArrayWithImageNamed:(NSString *)name numberOfImages:(NSUInteger)numberOfImages {
     NSMutableArray *imageArray = [NSMutableArray new];
     for (unsigned int i = 0; i < numberOfImages; i++) {
-        [self imageWithName:name imageNumber:i];
+        [self ImageNamed:name imageNumber:i];
     }
     return imageArray;
 }
 
 + (NSArray *) imageAnimationArrayWithName:(NSString *)name numberOfImages:(NSUInteger)numberOfImages {
-    return [[Localizer instance] imageAnimationArrayWithName:name numberOfImages:numberOfImages];
-}
-
-+ (UIImage *) imageWithName: (NSString *)name {
-    return [[Localizer instance] imageWithName:name];
+    return [[Localizer instance] imageAnimationArrayWithImageNamed:name numberOfImages:numberOfImages];
 }
 
 - (BOOL)objectForKeyExists: (NSString *)key {

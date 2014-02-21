@@ -34,11 +34,11 @@
 - (NSString *)stringWithKey: (NSString *)key;
 + (NSString *)stringWithKey: (NSString *)key;
 
-- (UIImage *)imageWithName: (NSString *)name;
-+ (UIImage *)imageWithName: (NSString *)name;
+- (UIImage *)imageNamed: (NSString *)name;
++ (UIImage *)imageNamed: (NSString *)name;
 
-- (NSArray *) imageAnimationArrayWithName:(NSString *)name numberOfImages:(NSUInteger)numberOfImages;
-+ (NSArray *) imageAnimationArrayWithName:(NSString *)name numberOfImages:(NSUInteger)numberOfImages;
+- (NSArray *) imageAnimationArrayWithImageNamed:(NSString *)name numberOfImages:(NSUInteger)numberOfImages;
++ (NSArray *) imageAnimationArrayWithImageNamed:(NSString *)name numberOfImages:(NSUInteger)numberOfImages;
 
 /** Checks if a string exists using a key **/
 - (BOOL)objectForKeyExists: (NSString *)key;
