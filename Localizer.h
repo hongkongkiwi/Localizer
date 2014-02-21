@@ -30,17 +30,24 @@
 
 /** Get a string using a key **/
 - (NSString *)stringWithKey: (NSString *)key;
++ (NSString *)stringWithKey: (NSString *)key;
+
+- (UIImage *)imageWithName: (NSString *)name;
++ (UIImage *)imageWithName: (NSString *)name;
+
+- (NSArray *) imageAnimationArrayWithName:(NSString *)name numberOfImages:(NSUInteger)numberOfImages;
++ (NSArray *) imageAnimationArrayWithName:(NSString *)name numberOfImages:(NSUInteger)numberOfImages;
 
 /** Checks if a string exists using a key **/
 - (BOOL)objectForKeyExists: (NSString *)key;
 
 /** Get an array using a key **/
 - (NSArray *)arrayWithKey: (NSString *)key;
++ (NSArray *)arrayWithKey: (NSString *)key;
 
 - (NSString *)stringWithKey: (NSString *)key atIndex: (int)index;
 
 /** Helper method to determine if the current language is english **/
 - (BOOL)isEnglish;
-
 
 @end

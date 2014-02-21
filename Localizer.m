@@ -70,7 +70,7 @@ static Localizer *_globalInstance;
     self.language = lang;
     
     if([self loadStringFile: _file]){
-        NSLog(@"Unable to create dictionary for file %@", _file);
+        NSLog(@"Localizer Error: Unable to create dictionary for file %@", _file);
         
         self.language = oldLang;
         return false;
@@ -89,6 +89,56 @@ static Localizer *_globalInstance;
     }
 }
 
++ (NSString *)stringWithKey:(NSString *)key {
+    return [[Localizer instance] stringWithKey:key];
+}
+
+- (UIImage *) imageWithName:(NSString *)name {
+    return [self imageWithName:name imageNumber:-1];
+}
+
+- (UIImage *) imageWithName:(NSString *)name imageNumber:(NSUInteger)imageNumber {
+    // Save path extension
+    NSString *extension = [name pathExtension];
+    // Remove path extension
+    name = [name stringByDeletingPathExtension];
+    NSString *imageText = @"";
+    if (imageNumber > -1) {
+        imageText = [NSString stringWithFormat:@"%lu_", (unsigned long)imageNumber];
+    }
+    NSString *localizedName = [NSString stringWithFormat:@"%@_%@%@.%@", name, imageText, self.language, extension];
+    UIImage *image = [UIImage imageNamed:localizedName];
+    
+    if (!image) {
+        localizedName = [NSString stringWithFormat:@"%@%@.%@", name, imageText, extension];
+        image = [UIImage imageNamed:localizedName];
+        if (!image) {
+            NSLog(@"Localizer Warning: Couldn't find any image named %@", localizedName);
+        } else if (![self.language isEqualToString:@"en"]) {
+            NSLog(@"Localizer Warning: Couldn't find image named %@ using default english image", localizedName);
+        }
+    }
+    
+    return image;
+}
+
+// Returns a localized image array suitable for passing to an animate function
+- (NSArray *) imageAnimationArrayWithName:(NSString *)name numberOfImages:(NSUInteger)numberOfImages {
+    NSMutableArray *imageArray = [NSMutableArray new];
+    for (unsigned int i = 0; i < numberOfImages; i++) {
+        [self imageWithName:name imageNumber:i];
+    }
+    return imageArray;
+}
+
++ (NSArray *) imageAnimationArrayWithName:(NSString *)name numberOfImages:(NSUInteger)numberOfImages {
+    return [[Localizer instance] imageAnimationArrayWithName:name numberOfImages:numberOfImages];
+}
+
++ (UIImage *) imageWithName: (NSString *)name {
+    return [[Localizer instance] imageWithName:name];
+}
+
 - (BOOL)objectForKeyExists: (NSString *)key {
     return ([_strings objectForKey:key] != nil);
 }
@@ -98,6 +148,10 @@ static Localizer *_globalInstance;
     return ([string length] > 0) ? [string componentsSeparatedByString: _separator] : nil;
 }
 
++ (NSArray *)arrayWithKey: (NSString *)key {
+    return [[Localizer instance] arrayWithKey:key];
+}
+
 - (NSString *)stringWithKey: (NSString *)key atIndex: (int)index{
     NSArray *array = [self arrayWithKey:key];
     
@@ -105,7 +159,6 @@ static Localizer *_globalInstance;
     
     return [array objectAtIndex:index];
 }
-
 
 - (BOOL)isEnglish {
     return ([self.language compare: @"en"] == NSOrderedSame);
