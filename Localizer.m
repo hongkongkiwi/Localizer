@@ -29,7 +29,9 @@ static Localizer *_globalInstance;
         self.language = [[NSUserDefaults standardUserDefaults] valueForKey: APP_LANG_KEY];
         if(_language == nil){
             NSString *syslang = [[NSLocale preferredLanguages] objectAtIndex:0];
-            NSLog(@"Phone language : %@", syslang);
+            if (self.logging) {
+                NSLog(@"Phone language : %@", syslang);
+            }
 //            if([syslang compare: @"zh-Hans"] == NSOrderedSame || [syslang compare: @"zh-Hant"] == NSOrderedSame){
 //                self.language = @"zh";
 //            } else {
@@ -44,6 +46,8 @@ static Localizer *_globalInstance;
         
         self.file = DEFAULT_FILE;
         self.separator = DEFAULT_SEPARATOR;
+        self.removeAtTwoTimes = YES;
+        self.logging = YES;
     }
     return self;
 }
@@ -54,8 +58,10 @@ static Localizer *_globalInstance;
     
     NSString* strings_path = [[NSBundle mainBundle] pathForResource:fullname ofType:@"txt"];
     
-    if(strings_path == nil){
-        NSLog(@"Unable to get path for file %@", fullname);
+    if(strings_path == nil) {
+        if (self.logging) {
+            NSLog(@"Unable to get path for file %@", fullname);
+        }
         return false;
     }
     
@@ -70,7 +76,9 @@ static Localizer *_globalInstance;
     self.language = lang;
     
     if([self loadStringFile: _file]){
-        NSLog(@"Localizer Error: Unable to create dictionary for file %@", _file);
+        if (self.logging) {
+            NSLog(@"Localizer Error: Unable to create dictionary for file %@", _file);
+        }
         
         self.language = oldLang;
         return false;
@@ -84,7 +92,9 @@ static Localizer *_globalInstance;
     if(string){
         return string;
     } else {
-        NSLog(@"Localizer Warning: Couldn't find string for key %@", key);
+        if (self.logging) {
+            NSLog(@"Localizer Warning: Couldn't find string for key %@", key);
+        }
         return nil;
     }
 }
@@ -102,20 +112,45 @@ static Localizer *_globalInstance;
     NSString *extension = [name pathExtension];
     // Remove path extension
     name = [name stringByDeletingPathExtension];
+    
+    NSString *atTwoTimes = @"";
+    // Check if @2x exists
+    if ([name rangeOfString:@"@2x"].location != NSNotFound) {
+        if (self.removeAtTwoTimes) {
+            if (self.logging) {
+                NSLog(@"Localizer: Warning image name to find contains @2x in the name but we removed it");
+            }
+            name = [name stringByReplacingOccurrencesOfString:@"@2x" withString:@""];
+        } else {
+            atTwoTimes = @"@2x";
+        }
+    }
+    
+    // If this is going to be used in an image array then add the image number
     NSString *imageText = @"";
     if (imageNumber > -1) {
         imageText = [NSString stringWithFormat:@"%lu_", (unsigned long)imageNumber];
     }
-    NSString *localizedName = [NSString stringWithFormat:@"%@_%@%@.%@", name, imageText, self.language, extension];
+    
+    // Check the localized name with users current language
+    NSString *localizedName = [NSString stringWithFormat:@"%@_%@%@%@.%@", name, imageText, self.language, atTwoTimes, extension];
     UIImage *image = [UIImage imageNamed:localizedName];
     
     if (!image) {
-        localizedName = [NSString stringWithFormat:@"%@%@.%@", name, imageText, extension];
+        // Check the localized name with no language (default) name
+        localizedName = [NSString stringWithFormat:@"%@%@%@.%@", name, imageText, atTwoTimes, extension];
         image = [UIImage imageNamed:localizedName];
         if (!image) {
-            NSLog(@"Localizer Warning: Couldn't find any image named %@", localizedName);
+            // Couldn't find any image at all tell the user
+            if (self.logging) {
+                NSLog(@"Localizer Warning: Couldn't find any image named %@", localizedName);
+            }
+            image = nil;
+        // Check whether the image was a default (just so we can warn the user)
         } else if (![self.language isEqualToString:@"en"]) {
-            NSLog(@"Localizer Warning: Couldn't find image named %@ using default english image", localizedName);
+            if (self.logging) {
+                NSLog(@"Localizer Warning: Couldn't find image named %@ using default english image", localizedName);
+            }
         }
     }
     

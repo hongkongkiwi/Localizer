@@ -15,10 +15,12 @@
 
 @interface Localizer : NSObject
 
-@property (strong, nonatomic) NSDictionary *strings;
-@property (strong, nonatomic) NSString *language;
-@property (strong, nonatomic) NSString *file;
-@property (strong, nonatomic) NSString *separator;
+@property (nonatomic, strong) NSDictionary *strings;
+@property (nonatomic, strong) NSString *language;
+@property (nonatomic, strong) NSString *file;
+@property (nonatomic, strong) NSString *separator;
+@property (nonatomic, assign) bool removeAtTwoTimes;
+@property (nonatomic, assign) bool logging;
 
 + (Localizer *)instance;
 
