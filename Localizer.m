@@ -171,7 +171,7 @@ static Localizer *_globalInstance;
     return imageArray;
 }
 
-+ (NSArray *) imageAnimationArrayWithName:(NSString *)name numberOfImages:(NSUInteger)numberOfImages {
++ (NSArray *) imageAnimationArrayWithImageNamed:(NSString *)name numberOfImages:(NSUInteger)numberOfImages {
     return [[Localizer instance] imageAnimationArrayWithImageNamed:name numberOfImages:numberOfImages];
 }
 
