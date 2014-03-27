@@ -53,22 +53,34 @@ static Localizer *_globalInstance;
 }
 
 - (BOOL) loadStringFile: (NSString *)filename {
-    
     NSString *fullname = [NSString stringWithFormat: @"%@_%@", filename, self.language];
     
-    NSString* strings_path = [[NSBundle mainBundle] pathForResource:fullname ofType:@"txt"];
+    NSString *strings_path = [[NSBundle mainBundle] pathForResource:fullname ofType:@"txt"];
     
-    if(strings_path == nil) {
+    if (strings_path == nil) {
         if (self.logging) {
-            NSLog(@"Unable to get path for file %@", fullname);
+            NSLog(@"Localizer: ERROR - Unable to get path for file %@", fullname);
         }
         return false;
     }
     
-    self.file = filename;
     self.strings = [NSDictionary dictionaryWithContentsOfFile:strings_path];
+    if (!self.strings) {
+        if (self.logging) {
+            NSLog(@"Localizer: ERROR - Tried to load invalid strings file %@", filename);
+        }
+        return NO;
+    }
     
-    return true;
+    self.file = filename;
+    if ([self.strings count] == 0) {
+        if (self.logging) {
+            NSLog(@"Localizer: WARNING - No strings found in %@", self.strings);
+        }
+        return NO;
+    }
+    
+    return YES;
 }
 
 - (BOOL)changeLanguage: (NSString *)lang {
