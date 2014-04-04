@@ -15,6 +15,8 @@
 
 @interface Localizer : NSObject
 
+@property (nonatomic, strong) NSDictionary *availableLanguages;
+
 @property (nonatomic, strong) NSDictionary *strings;
 @property (nonatomic, strong) NSString *language;
 @property (nonatomic, strong) NSString *file;
