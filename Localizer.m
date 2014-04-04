@@ -64,12 +64,20 @@ static Localizer *_globalInstance;
         return false;
     }
     
-    self.strings = [NSDictionary dictionaryWithContentsOfFile:strings_path];
-    if (!self.strings) {
+    NSDictionary *loadedDict = [NSDictionary dictionaryWithContentsOfFile:strings_path];
+    if (!loadedDict) {
         if (self.logging) {
             NSLog(@"Localizer: ERROR - Tried to load invalid strings file %@", filename);
         }
         return NO;
+    }
+    
+    if (self.strings) {
+        NSMutableDictionary *newArray = self.strings.mutableCopy;
+        [newArray addEntriesFromDictionary:loadedDict];
+        self.strings = newArray;
+    } else {
+        self.strings = loadedDict;
     }
     
     self.file = filename;
