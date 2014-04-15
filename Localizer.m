@@ -8,103 +8,165 @@
 #import <Foundation/Foundation.h>
 #import "Localizer.h"
 
-@implementation Localizer {
-    
-}
+#ifndef SUPPORTED_LANGUAGES
+#define SUPPORTED_LANGUAGES @[@"en"]
+#endif
+
+@implementation Localizer
 
 static Localizer *_globalInstance;
 
 + (Localizer *)instance {
     if(_globalInstance == nil){
         _globalInstance = [[Localizer alloc] init];
-        
-        [_globalInstance loadStringFile: DEFAULT_FILE];
     }
     return _globalInstance;
 }
 
 - (id)init {
-    self = [super init];
-    if(self){
-        self.language = [[NSUserDefaults standardUserDefaults] valueForKey: APP_LANG_KEY];
-        if(_language == nil){
-            NSString *syslang = [[NSLocale preferredLanguages] objectAtIndex:0];
-            if (self.logging) {
-                NSLog(@"Phone language : %@", syslang);
-            }
-//            if([syslang compare: @"zh-Hans"] == NSOrderedSame || [syslang compare: @"zh-Hant"] == NSOrderedSame){
-//                self.language = @"zh";
-//            } else {
-//                self.language = @"en";
-//            }
-
-            // overwrite to english
-            self.language = @"en";
-            
-            [[NSUserDefaults standardUserDefaults] setValue:self.language forKey: APP_LANG_KEY];
-        }
-        
-        self.file = DEFAULT_FILE;
+    if (self = [super init]) {
         self.separator = DEFAULT_SEPARATOR;
         self.removeAtTwoTimes = YES;
         self.logging = YES;
+        
+        // Check supported languages
+        for (NSString *language in SUPPORTED_LANGUAGES) {
+            NSString *fileName = [NSString stringWithFormat:@"strings_%@", language];
+            NSString* filePath = [[NSBundle mainBundle] pathForResource:fileName ofType:@"txt"];
+            NSAssert(filePath, @"Localizer: ERROR - cannot file %@ for language %@", fileName, language);
+        }
+        
+        self.language = [[NSUserDefaults standardUserDefaults] valueForKey: APP_LANG_KEY];
+        
+        if (self.language == nil) {
+            NSString *systemLanguage = [[NSLocale preferredLanguages] objectAtIndex:0];
+            
+            if (self.logging) {
+                NSLog(@"Localizer: Device language %@", systemLanguage);
+            }
+
+            // Set as system language
+            self.language = systemLanguage;
+        }
     }
     return self;
 }
 
-- (BOOL) loadStringFile: (NSString *)filename {
-    NSString *fullname = [NSString stringWithFormat: @"%@_%@", filename, self.language];
-    
-    NSString *strings_path = [[NSBundle mainBundle] pathForResource:fullname ofType:@"txt"];
-    
-    if (strings_path == nil) {
-        if (self.logging) {
-            NSLog(@"Localizer: ERROR - Unable to get path for file %@", fullname);
-        }
-        return false;
-    }
-    
-    NSDictionary *loadedDict = [NSDictionary dictionaryWithContentsOfFile:strings_path];
-    if (!loadedDict) {
-        if (self.logging) {
-            NSLog(@"Localizer: ERROR - Tried to load invalid strings file %@", filename);
-        }
-        return NO;
-    }
-    
-    if (self.strings) {
-        NSMutableDictionary *newArray = self.strings.mutableCopy;
-        [newArray addEntriesFromDictionary:loadedDict];
-        self.strings = newArray;
+- (void) setLanguage:(NSString *)language {
+    // Check if the language is in our supported languages list
+    if ([SUPPORTED_LANGUAGES containsObject:language]) {
+        _language = language;
     } else {
-        self.strings = loadedDict;
-    }
-    
-    self.file = filename;
-    if ([self.strings count] == 0) {
         if (self.logging) {
-            NSLog(@"Localizer: WARNING - No strings found in %@", self.strings);
+            NSLog(@"Localizer: WARNING - Tried to set language to %@ but we don't support it", language);
         }
-        return NO;
+        return;
+    }
+
+    // Try to load all our language dependant files
+    NSDictionary *strings = [self loadFromFile:@"strings"];
+    NSDictionary *fonts = [self loadFromFile:@"fonts" ofType:@"json"];
+    
+    // Check if load was successful
+    if (strings && fonts) {
+        self.strings = strings;
+        self.fonts = fonts;
+        [self checkAllFonts:fonts]; // Just do a check to ensure all is good
+    } else {
+        if (self.logging) {
+            NSLog(@"Localizer: ERROR - Cannot load strings & fonts for %@", language);
+            return;
+        }
     }
     
-    return YES;
+    // Save the new language in the user defaults
+    [[NSUserDefaults standardUserDefaults] setValue:_language forKey:APP_LANG_KEY];
+    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-- (BOOL)changeLanguage: (NSString *)lang {
-    NSString *oldLang = self.language;
-    self.language = lang;
+-(NSDictionary *) dictionaryWithContentsOfJSONString:(NSString *)fileLocation {
+    NSString *filePath = [[NSBundle mainBundle] pathForResource:[fileLocation stringByDeletingPathExtension] ofType:[fileLocation pathExtension]];
+    NSData* data = [NSData dataWithContentsOfFile:filePath];
+    __autoreleasing NSError* error = nil;
+    if (data == nil) {
+        return nil;
+    }
+    id result = [NSJSONSerialization JSONObjectWithData:data
+                                                options:kNilOptions error:&error];
+    // Be careful here. You add this as a category to NSDictionary
+    // but you get an id back, which means that result
+    // might be an NSArray as well!
+    if (error != nil) return nil;
+    return result;
+}
+
+- (NSDictionary *) loadFromFile:(NSString *)filename {
+    return [self loadFromFile:filename ofType:@"txt"];
+}
+
+- (NSDictionary *) loadFromFile:(NSString *)filename ofType:(NSString *)ofType {
+    // Generate the name of the file including the language
+    NSString *filenameWithLanguage = [NSString stringWithFormat: @"%@_%@", filename, self.language];
     
-    if([self loadStringFile: _file]){
-        if (self.logging) {
-            NSLog(@"Localizer Error: Unable to create dictionary for file %@", _file);
+    NSString *filePath = [[NSBundle mainBundle] pathForResource:filenameWithLanguage ofType:ofType];
+    
+    NSString *usedFilename = filenameWithLanguage;
+    
+    if (!filePath) {
+        filePath = [[NSBundle mainBundle] pathForResource:filename ofType:ofType];
+        if (!filePath) {
+            if (self.logging) {
+                NSLog(@"Localizer: ERROR - Unable to get path for file %@", filename);
+            }
+            return nil;
         }
-        
-        self.language = oldLang;
-        return false;
+        usedFilename = filename;
     }
     
-    return true;
+    NSDictionary *loadedDict;
+    if ([ofType isEqualToString:@"json"]) {
+        loadedDict = [self dictionaryWithContentsOfJSONString:[usedFilename stringByAppendingPathExtension:@"json"]];
+    } else if ([ofType isEqualToString:@"txt"]) {
+        loadedDict = [NSDictionary dictionaryWithContentsOfFile:filePath];
+    }
+    
+    if (!loadedDict) {
+        if (self.logging) {
+            NSLog(@"Localizer: ERROR - Tried to load invalid file %@", usedFilename);
+        }
+        return nil;
+    }
+    
+    if ([loadedDict count] == 0) {
+        if (self.logging) {
+            NSLog(@"Localizer: WARNING - %@ was is loaded but is an empty dictionary", usedFilename);
+        }
+    }
+    
+    //return @{@"contents": loadedDict, @"filename": usedFilename};
+    return loadedDict;
+}
+
+- (bool) isDeviceIpad {
+    return UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
+}
+
+// This method checks all fonts in the dictionary actually exist in our info.plist
+- (void) checkAllFonts:(NSDictionary *)fontsDict {
+    NSDictionary* infoDict = [[NSBundle mainBundle] infoDictionary];
+    NSArray *fontsIncluded = [infoDict objectForKey:@"UIAppFonts"];
+    NSLog(@"Fonts %@", fontsIncluded);
+    
+    for (NSString *fontDictKey in fontsDict) {
+        NSDictionary *fontDict = fontsDict[fontDictKey];
+        NSString *fontName = [fontDict[@"Name"] stringByAppendingPathExtension:@"otf"];
+        
+        if (![[NSFileManager defaultManager] fileExistsAtPath:[[NSBundle mainBundle] pathForResource:fontName ofType:nil]]) {
+            if (self.logging) {
+                NSLog(@"Localizer: ERROR - Font %@ was expected but does not exist in application bundle", fontName);
+            }
+        }
+    }
 }
 
 - (NSString *)stringWithKey: (NSString *)key{
@@ -117,6 +179,31 @@ static Localizer *_globalInstance;
         }
         return nil;
     }
+}
+
++ (UIFont *)fontWithKey:(NSString *)key {
+    return [[Localizer instance] fontWithKey:key];
+}
+
+- (UIFont *)fontWithKey:(NSString *)key {
+    
+    if (!self.fonts[key]) {
+        if (self.logging) {
+            NSLog(@"Localizer: ERROR - Tried to get font with key %@ but it doesn't exist in our dictionary", key);
+        }
+        // Safe fallback
+        return [UIFont systemFontOfSize:12];
+    }
+    
+    NSString *fontName = self.fonts[key][@"Name"];
+    
+    NSString *deviceKey = [self isDeviceIpad] ? @"iPad" : @"iPhone";
+    
+    NSNumber *fontSize = self.fonts[key][@"Size"][deviceKey];
+    
+    UIFont *font = [UIFont fontWithName:fontName size:[fontSize floatValue]];
+    
+    return font;
 }
 
 + (NSString *)stringWithKey:(NSString *)key {
