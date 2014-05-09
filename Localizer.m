@@ -9,7 +9,7 @@
 #import "Localizer.h"
 
 #ifndef SUPPORTED_LANGUAGES
-#define SUPPORTED_LANGUAGES @[@"en"]
+#define SUPPORTED_LANGUAGES @[@"en", @"de", @"jp", @"zh_cn"]
 #endif
 
 @implementation Localizer
@@ -53,6 +53,10 @@ static Localizer *_globalInstance;
 }
 
 - (void) setLanguage:(NSString *)language {
+    [self setLanguage:language save:YES];
+}
+
+- (void) setLanguage:(NSString *)language save:(bool)save {
     // Check if the language is in our supported languages list
     if ([SUPPORTED_LANGUAGES containsObject:language]) {
         _language = language;
@@ -79,9 +83,13 @@ static Localizer *_globalInstance;
         }
     }
     
-    // Save the new language in the user defaults
-    [[NSUserDefaults standardUserDefaults] setValue:_language forKey:APP_LANG_KEY];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    if (save) {
+        // Save the new language in the user defaults
+        [[NSUserDefaults standardUserDefaults] setValue:_language forKey:APP_LANG_KEY];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:LANGUAGE_CHANGED_BROADCASTID object:self];
 }
 
 -(NSDictionary *) dictionaryWithContentsOfJSONString:(NSString *)fileLocation {
@@ -159,9 +167,10 @@ static Localizer *_globalInstance;
     
     for (NSString *fontDictKey in fontsDict) {
         NSDictionary *fontDict = fontsDict[fontDictKey];
-        NSString *fontName = [fontDict[@"Name"] stringByAppendingPathExtension:@"otf"];
+        NSString *fontName = fontDict[@"Name"];
         
-        if (![[NSFileManager defaultManager] fileExistsAtPath:[[NSBundle mainBundle] pathForResource:fontName ofType:nil]]) {
+        if (![[NSFileManager defaultManager] fileExistsAtPath:[[NSBundle mainBundle] pathForResource:fontName ofType:@"otf"]] &&
+            ![[NSFileManager defaultManager] fileExistsAtPath:[[NSBundle mainBundle] pathForResource:fontName ofType:@"ttf"]]) {
             if (self.logging) {
                 NSLog(@"Localizer: ERROR - Font %@ was expected but does not exist in application bundle", fontName);
             }
@@ -194,14 +203,22 @@ static Localizer *_globalInstance;
         // Safe fallback
         return [UIFont systemFontOfSize:12];
     }
-    
+
     NSString *fontName = self.fonts[key][@"Name"];
     
     NSString *deviceKey = [self isDeviceIpad] ? @"iPad" : @"iPhone";
     
-    NSNumber *fontSize = self.fonts[key][@"Size"][deviceKey];
+    CGFloat fontSize = 84;
+    if (self.fonts[key][@"Size"][deviceKey]) {
+        fontSize = [self.fonts[key][@"Size"][deviceKey] floatValue];
+    }
     
-    UIFont *font = [UIFont fontWithName:fontName size:[fontSize floatValue]];
+    UIFont *font;
+    if (!fontName) {
+        font = [UIFont systemFontOfSize:fontSize];
+    } else {
+        font = [UIFont fontWithName:fontName size:fontSize];
+    }
     
     return font;
 }
@@ -260,9 +277,11 @@ static Localizer *_globalInstance;
             image = nil;
         // Check whether the image was a default (just so we can warn the user)
         } else if (![self.language isEqualToString:@"en"]) {
-            if (self.logging) {
-                NSLog(@"Localizer Warning: Couldn't find image named %@ using default english image", localizedName);
-            }
+//            if (self.logging) {
+//                NSLog(@"Localizer Warning: Couldn't find image named %@ using default english image", localizedName);
+//            }
+            localizedName = [NSString stringWithFormat:@"%@%@%@.%@", name, imageText, atTwoTimes, extension];
+            image = [UIImage imageNamed:localizedName];
         }
     }
     
@@ -307,6 +326,16 @@ static Localizer *_globalInstance;
     return ([self.language compare: @"en"] == NSOrderedSame);
 }
 
-
+- (void) displayAllInstalledFonts {
+    for (NSString* family in [UIFont familyNames])
+    {
+        NSLog(@"%@", family);
+        
+        for (NSString* name in [UIFont fontNamesForFamilyName: family])
+        {
+            NSLog(@"  %@", name);
+        }
+    }
+}
 
 @end

@@ -13,6 +13,7 @@
 #define DEFAULT_STRINGS_FILE @"strings"
 #define DEFAULT_FONTS_FILE @"fonts"
 #define DEFAULT_SEPARATOR @"; "
+#define LANGUAGE_CHANGED_BROADCASTID @"LocalizerLanguageChanged"
 
 @interface Localizer : NSObject
 
@@ -31,6 +32,9 @@
 @property (nonatomic, assign) bool logging;
 
 + (Localizer *)instance;
+
+- (void) setLanguage:(NSString *)language;
+- (void) setLanguage:(NSString *)language save:(bool)save;
 
 /** Get a string using a key **/
 - (NSString *)stringWithKey: (NSString *)key;
@@ -58,5 +62,7 @@
 
 /** Helper method to determine if the current language is english **/
 - (BOOL)isEnglish;
+
+- (void) displayAllInstalledFonts;
 
 @end
