@@ -30,6 +30,8 @@
 @property (nonatomic, strong) NSString *separator;
 @property (nonatomic, assign) bool removeAtTwoTimes;
 @property (nonatomic, assign) bool logging;
+@property (nonatomic, strong) NSString *fontDownloadError;
+@property (nonatomic, strong, readonly) NSArray *downloadableSystemFonts;
 
 + (Localizer *)instance;
 
@@ -64,5 +66,7 @@
 - (BOOL)isEnglish;
 
 - (void) displayAllInstalledFonts;
+
++ (void)downloadableSystemFonts;
 
 @end
