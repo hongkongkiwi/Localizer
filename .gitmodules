@@ -1,0 +1,7 @@
+[submodule "FDSFontDownloader"]
+	path = SDKs/FDSFontDownloader
+	url = https://github.com/fdstevex/FDSFontDownloader.git
+
+[submodule "NSLocale-ISO639_2"]
+	path = SDKs/NSLocale-ISO639_2
+	url = https://github.com/lickylick/NSLocale-ISO639_2.git
