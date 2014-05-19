@@ -10,6 +10,7 @@
 
 #import "Localizer.h"
 #import "FDSFontDownloader.h"
+#import "NSLocale+ISO639_2.h"
 
 #ifndef SUPPORTED_LANGUAGES
 #define SUPPORTED_LANGUAGES @[@"en", @"de", @"jp", @"zh_cn"]
@@ -51,17 +52,25 @@ static Localizer *_globalInstance;
             NSAssert(filePath, @"Localizer: ERROR - cannot file %@ for language %@", fileName, language);
         }
         
+        // Load langauge if it's saved in the prefs
         self.language = [[NSUserDefaults standardUserDefaults] valueForKey: APP_LANG_KEY];
         
         if (self.language == nil) {
             NSString *systemLanguage = [[NSLocale preferredLanguages] objectAtIndex:0];
+            NSLocale *systemLocale = [NSLocale localeWithLocaleIdentifier:systemLanguage];
+            NSString *iso639 = [systemLocale ISO639_2LanguageIdentifier];
             
             if (self.logging) {
-                NSLog(@"Localizer: Device language %@", systemLanguage);
+                NSLog(@"Localizer: Device language %@", iso639);
+            }
+            
+            // This is just a quick hack, really we should be using the real letter codes not the ISO639 ones. If we add more langauges (like Traditional Chinese I will look at changing it)
+            if ([iso639 isEqualToString:@"zh"]) {
+                iso639 = @"zh_cn";
             }
 
             // Set as system language
-            self.language = systemLanguage;
+            self.language = iso639;
         }
     }
     return self;
@@ -72,6 +81,8 @@ static Localizer *_globalInstance;
 }
 
 - (void) setLanguage:(NSString *)language save:(bool)save {
+    // Remap
+    
     // Check if the language is in our supported languages list
     if ([SUPPORTED_LANGUAGES containsObject:language]) {
         _language = language;
