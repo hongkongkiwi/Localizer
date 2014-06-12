@@ -68,6 +68,11 @@ static Localizer *_globalInstance;
             if ([iso639 isEqualToString:@"zh"]) {
                 iso639 = @"zh_cn";
             }
+            
+            // Set default language to en if preferred language is not supported
+            if(![SUPPORTED_LANGUAGES containsObject:iso639]) {
+                iso639 = @"en";
+            }
 
             // Set as system language
             self.language = iso639;
