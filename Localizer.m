@@ -202,7 +202,6 @@ static Localizer *_globalInstance;
     for (NSString *fontDictKey in fontsDict) {
         NSDictionary *fontDict = fontsDict[fontDictKey];
         NSString *fontName = fontDict[@"Name"];
-        
         if (![[NSFileManager defaultManager] fileExistsAtPath:[[NSBundle mainBundle] pathForResource:fontName ofType:@"otf"]] &&
             ![[NSFileManager defaultManager] fileExistsAtPath:[[NSBundle mainBundle] pathForResource:fontName ofType:@"ttf"]] &&
             ![UIFont fontWithName:fontName size:12]) {
