@@ -15,6 +15,10 @@
 #define DEFAULT_SEPARATOR @"; "
 #define LANGUAGE_CHANGED_BROADCASTID @"LocalizerLanguageChanged"
 
+#ifndef SUPPORTED_LANGUAGES
+#define SUPPORTED_LANGUAGES @[@"en", @"jp", @"de", @"zh_cn", @"it", @"fr", @"nl", @"sv", @"es"]
+#endif
+
 @interface Localizer : NSObject
 
 @property (nonatomic, strong) NSDictionary *availableLanguages;

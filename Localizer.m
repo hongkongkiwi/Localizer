@@ -12,9 +12,7 @@
 #import "FDSFontDownloader.h"
 #import "NSLocale+ISO639_2.h"
 
-#ifndef SUPPORTED_LANGUAGES
-#define SUPPORTED_LANGUAGES @[@"en", @"de", @"jp", @"zh_cn", @"it"]
-#endif
+
 
 @interface Localizer() <FDSFontDownloaderDelegate>
 @property (nonatomic, strong) FDSFontDownloader *fontDownloader;
